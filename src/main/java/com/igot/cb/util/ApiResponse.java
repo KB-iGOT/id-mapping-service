@@ -37,20 +37,4 @@ public class ApiResponse {
     public void setResult(Map<String, Object> result) {
         response = result;
     }
-
-    public Object get(String key) {
-        return response.get(key);
-    }
-
-    public void put(String key, Object vo) {
-        response.put(key, vo);
-    }
-
-    public void putAll(Map<String, Object> map) {
-        response.putAll(map);
-    }
-
-    public boolean containsKey(String key) {
-        return response.containsKey(key);
-    }
 }

@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -17,8 +18,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -101,6 +104,20 @@ class IdMappingServiceTest {
             verify(jdbcTemplate, times(1)).query(eq(mockQuery), any(PreparedStatementSetter.class),
                     any(SingleColumnRowMapper.class));
         }
+    }
+
+    @Test
+    void testGetOrInsertIdWithEmptyName() {
+        // Arrange
+        String name = "";
+
+        // Act
+        ApiResponse response = idMappingService.getOrInsertId(name);
+
+        // Assert
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getResponseCode(), "HTTP status should be BAD_REQUEST");
+        assertEquals("Name cannot be empty.", response.getParams().getErrMsg(), "Error message should match");
     }
 
     @Test
@@ -301,32 +318,27 @@ class IdMappingServiceTest {
 
     @Test
     void testFetchOrInsertFromDb_PreparedStatementSetter() throws SQLException {
-        // Arrange
         String testName = "testName";
         String mockQuery = "SELECT id FROM table WHERE name = ? OR name = ?";
 
-        try (MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
+        try (MockedStatic<PropertiesCache> cacheMock = mockStatic(PropertiesCache.class)) {
+            cacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
 
-            // Capture the PreparedStatementSetter to verify its behavior
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenAnswer(invocation -> {
-                        PreparedStatementSetter pss = invocation.getArgument(1);
-                        // We can't easily test the PreparedStatementSetter without a real
-                        // PreparedStatement
-                        // but we can verify it's called
-                        return Arrays.asList(123);
-                    });
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+                .thenAnswer(invocation -> {
+                    PreparedStatementSetter setter = invocation.getArgument(1);
+                    PreparedStatement psMock = mock(PreparedStatement.class);
+                    setter.setValues(psMock);
+                    // Verify that the setter sets both parameters correctly
+                    verify(psMock).setString(1, testName);
+                    verify(psMock).setString(2, testName);
+                    return Collections.singletonList(7);
+                });
 
-            // Act
-            ApiResponse result = idMappingService.getOrInsertId(testName);
-
-            // Assert
-            assertNotNull(result);
-            verify(jdbcTemplate).query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
+            ApiResponse response = idMappingService.getOrInsertId(testName);
+            assertNotNull(response);
+            assertEquals(7, response.getResult().get(testName));
         }
     }
 }

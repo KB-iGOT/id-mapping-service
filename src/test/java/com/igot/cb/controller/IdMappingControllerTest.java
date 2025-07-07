@@ -57,7 +57,7 @@ public class IdMappingControllerTest {
     public void shouldReturnErrorResponseWhenNameIsInvalid() {
         // Arrange
         String name = "";
-        ApiResponse response = new ApiResponse();
+        ApiResponse response = new ApiResponse("api.idmap.lookup");
         response.setResponseCode(HttpStatus.BAD_REQUEST);
         response.setResult(Map.of());
 
@@ -72,6 +72,7 @@ public class IdMappingControllerTest {
         assertNotNull(result.getBody(), "Response body should not be null");
         assertEquals(HttpStatus.BAD_REQUEST, result.getBody().getResponseCode(), "Response code should be BAD_REQUEST");
         assertTrue(result.getBody().getResult().isEmpty(), "Result map should be empty");
+        assertEquals("api.idmap.lookup", result.getBody().getId(),"Response ID should match the API ID");
 
         // Verify
         verify(idMappingService).getOrInsertId(name);
