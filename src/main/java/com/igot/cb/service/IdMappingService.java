@@ -12,10 +12,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,9 +39,16 @@ public class IdMappingService {
 
     public ApiResponse getOrInsertId(String name) {
         ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP);
+
+        if (StringUtils.hasText(name)) {
+            name = name.trim();
+        } else {
+            ProjectUtil.setErrorDetails(response, "Name cannot be empty.", HttpStatus.BAD_REQUEST);
+            return response;
+        }
         int result = cache.computeIfAbsent(name, this::fetchOrInsertFromDb);
         if (result < 0) {
-            ProjectUtil.setErrorDetails(response, "Failed to perform lookup.");
+            ProjectUtil.setErrorDetails(response, "Failed to perform lookup.", HttpStatus.INTERNAL_SERVER_ERROR);
         } else {
             response.getResult().put(name, result);
         }
@@ -59,7 +68,7 @@ public class IdMappingService {
             }
         } catch (Exception e) {
             log.error("Failed to perform bulk lookup. Exception: ", e);
-            ProjectUtil.setErrorDetails(response, "Failed to perform bulk lookup. Exception: " + e.getMessage());
+            ProjectUtil.setErrorDetails(response, "Failed to perform bulk lookup. Exception: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return response;
     }

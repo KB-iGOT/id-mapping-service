@@ -2,6 +2,7 @@ package com.igot.cb.util;
 
 import java.time.Instant;
 import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 
 public class ProjectUtil {
@@ -16,9 +17,9 @@ public class ProjectUtil {
         return response;
     }
 
-    public static void setErrorDetails(ApiResponse response, String errMsg) {
+    public static void setErrorDetails(ApiResponse response, String errMsg, HttpStatus status) {
         response.getParams().setErrMsg(errMsg);
         response.getParams().setStatus(Constants.FAILED);
-        response.setResponseCode(HttpStatus.INTERNAL_SERVER_ERROR);
+        response.setResponseCode(status);
     }
 }

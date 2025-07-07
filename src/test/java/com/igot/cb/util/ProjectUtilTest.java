@@ -18,7 +18,7 @@ public class ProjectUtilTest {
     @Test
     public void testSetErrorDetails() {
         ApiResponse response = ProjectUtil.createDefaultResponse("api.test");
-        ProjectUtil.setErrorDetails(response, "error occurred");
+        ProjectUtil.setErrorDetails(response, "error occurred", HttpStatus.INTERNAL_SERVER_ERROR);
         assertEquals(Constants.FAILED, response.getParams().getStatus());
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getResponseCode());
         assertEquals("error occurred", response.getParams().getErrMsg());

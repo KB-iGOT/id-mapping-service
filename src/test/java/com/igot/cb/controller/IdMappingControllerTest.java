@@ -1,8 +1,13 @@
 package com.igot.cb.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.igot.cb.service.IdMappingService;
-import com.igot.cb.util.ApiResponse;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,10 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import com.igot.cb.service.IdMappingService;
+import com.igot.cb.util.ApiResponse;
 
 @ExtendWith(MockitoExtension.class)
 public class IdMappingControllerTest {
@@ -27,7 +30,8 @@ public class IdMappingControllerTest {
     private IdMappingController idMappingController;
 
     @Test
-    public void testLookupSuccess() {
+    public void shouldReturnSuccessResponseWhenNameIsValid() {
+        // Arrange
         String name = "Group A";
         ApiResponse response = new ApiResponse();
         response.setResponseCode(HttpStatus.OK);
@@ -35,25 +39,93 @@ public class IdMappingControllerTest {
 
         when(idMappingService.getOrInsertId(name)).thenReturn(response);
 
+        // Act
         ResponseEntity<ApiResponse> result = idMappingController.lookup(name);
 
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(123, result.getBody().getResult().get(name));
+        // Assert
+        assertNotNull(result, "ResponseEntity should not be null");
+        assertEquals(HttpStatus.OK, result.getStatusCode(), "HTTP status code should be OK");
+        assertNotNull(result.getBody(), "Response body should not be null");
+        assertEquals(HttpStatus.OK, result.getBody().getResponseCode(), "Response code should be OK");
+        assertEquals(123, result.getBody().getResult().get(name), "Result map should contain the correct value");
+
+        // Verify
+        verify(idMappingService).getOrInsertId(name);
     }
 
     @Test
-    public void testBulkLookup() throws Exception {
-        MockMultipartFile mockFile = new MockMultipartFile("file", "test.csv", "text/csv", "Group A\nGroup B".getBytes());
+    public void shouldReturnErrorResponseWhenNameIsInvalid() {
+        // Arrange
+        String name = "";
+        ApiResponse response = new ApiResponse();
+        response.setResponseCode(HttpStatus.BAD_REQUEST);
+        response.setResult(Map.of());
+
+        when(idMappingService.getOrInsertId(name)).thenReturn(response);
+
+        // Act
+        ResponseEntity<ApiResponse> result = idMappingController.lookup(name);
+
+        // Assert
+        assertNotNull(result, "ResponseEntity should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode(), "HTTP status code should be BAD_REQUEST");
+        assertNotNull(result.getBody(), "Response body should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, result.getBody().getResponseCode(), "Response code should be BAD_REQUEST");
+        assertTrue(result.getBody().getResult().isEmpty(), "Result map should be empty");
+
+        // Verify
+        verify(idMappingService).getOrInsertId(name);
+    }
+
+    @Test
+    public void shouldReturnSuccessResponseForBulkLookup() throws Exception {
+        // Arrange
+        MockMultipartFile mockFile = new MockMultipartFile("file", "test.csv", "text/csv",
+                "Group A\nGroup B".getBytes());
         ApiResponse response = new ApiResponse();
         response.setResponseCode(HttpStatus.OK);
         response.setResult(Map.of("Group A", 1, "Group B", 2));
 
         when(idMappingService.bulkGetOrInsert(mockFile)).thenReturn(response);
 
+        // Act
         ResponseEntity<ApiResponse> result = idMappingController.bulkLookup(mockFile);
 
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(1, result.getBody().getResult().get("Group A"));
-        assertEquals(2, result.getBody().getResult().get("Group B"));
+        // Assert
+        assertNotNull(result, "ResponseEntity should not be null");
+        assertEquals(HttpStatus.OK, result.getStatusCode(), "HTTP status code should be OK");
+        assertNotNull(result.getBody(), "Response body should not be null");
+        assertEquals(HttpStatus.OK, result.getBody().getResponseCode(), "Response code should be OK");
+        assertEquals(1, result.getBody().getResult().get("Group A"),
+                "Result map should contain the correct value for Group A");
+        assertEquals(2, result.getBody().getResult().get("Group B"),
+                "Result map should contain the correct value for Group B");
+
+        // Verify
+        verify(idMappingService).bulkGetOrInsert(mockFile);
+    }
+
+    @Test
+    public void shouldReturnErrorResponseForBulkLookupWithInvalidFile() throws Exception {
+        // Arrange
+        MockMultipartFile mockFile = new MockMultipartFile("file", "invalid.csv", "text/csv", "".getBytes());
+        ApiResponse response = new ApiResponse();
+        response.setResponseCode(HttpStatus.BAD_REQUEST);
+        response.setResult(Map.of());
+
+        when(idMappingService.bulkGetOrInsert(mockFile)).thenReturn(response);
+
+        // Act
+        ResponseEntity<ApiResponse> result = idMappingController.bulkLookup(mockFile);
+
+        // Assert
+        assertNotNull(result, "ResponseEntity should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode(), "HTTP status code should be BAD_REQUEST");
+        assertNotNull(result.getBody(), "Response body should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, result.getBody().getResponseCode(), "Response code should be BAD_REQUEST");
+        assertTrue(result.getBody().getResult().isEmpty(), "Result map should be empty");
+
+        // Verify
+        verify(idMappingService).bulkGetOrInsert(mockFile);
     }
 }

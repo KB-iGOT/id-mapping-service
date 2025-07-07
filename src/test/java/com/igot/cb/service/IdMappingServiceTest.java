@@ -30,6 +30,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.SingleColumnRowMapper;
@@ -63,7 +64,8 @@ class IdMappingServiceTest {
         // Clear the cache before each test
         Field cacheField = IdMappingService.class.getDeclaredField("cache");
         cacheField.setAccessible(true);
-        ConcurrentHashMap<String, Integer> cache = (ConcurrentHashMap<String, Integer>) cacheField.get(idMappingService);
+        ConcurrentHashMap<String, Integer> cache = (ConcurrentHashMap<String, Integer>) cacheField
+                .get(idMappingService);
         cache.clear();
 
         // Setup mock response
@@ -80,13 +82,14 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
                     .thenReturn(mockResponse);
             propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenReturn(Arrays.asList(expectedId));
 
             // Act
@@ -95,7 +98,8 @@ class IdMappingServiceTest {
             // Assert
             assertNotNull(result);
             assertEquals(expectedId, result.getResult().get(testName));
-            verify(jdbcTemplate, times(1)).query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class));
+            verify(jdbcTemplate, times(1)).query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class));
         }
     }
 
@@ -106,18 +110,19 @@ class IdMappingServiceTest {
         int expectedId = 456;
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
                     .thenReturn(mockResponse);
             propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn("SELECT id FROM table WHERE name = ?");
+            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY))
+                    .thenReturn("SELECT id FROM table WHERE name = ?");
             when(jdbcTemplate.query(anyString(), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
                     .thenReturn(Arrays.asList(expectedId));
 
             // First call to populate cache
             idMappingService.getOrInsertId(testName);
-            
+
             // Act - Second call should use cache
             ApiResponse result = idMappingService.getOrInsertId(testName);
 
@@ -125,7 +130,8 @@ class IdMappingServiceTest {
             assertNotNull(result);
             assertEquals(expectedId, result.getResult().get(testName));
             // Verify database is called only once (first time)
-            verify(jdbcTemplate, times(1)).query(anyString(), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class));
+            verify(jdbcTemplate, times(1)).query(anyString(), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class));
         }
     }
 
@@ -136,13 +142,14 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
                     .thenReturn(mockResponse);
             propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenThrow(new RuntimeException("Database connection failed"));
 
             // Act & Assert
@@ -157,13 +164,14 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
                     .thenReturn(mockResponse);
             propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenReturn(Arrays.asList()); // Empty list
 
             // Act
@@ -171,7 +179,8 @@ class IdMappingServiceTest {
 
             // Assert
             assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(mockResponse, "Failed to perform lookup."));
+            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(mockResponse, "Failed to perform lookup.",
+                    HttpStatus.INTERNAL_SERVER_ERROR));
         }
     }
 
@@ -183,7 +192,7 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
                     .thenReturn(mockResponse);
@@ -192,7 +201,8 @@ class IdMappingServiceTest {
             when(multipartFile.getInputStream()).thenReturn(inputStream);
 
             // Mock database responses for each name
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenReturn(Arrays.asList(1))
                     .thenReturn(Arrays.asList(2))
                     .thenReturn(Arrays.asList(3));
@@ -202,7 +212,8 @@ class IdMappingServiceTest {
 
             // Assert
             assertNotNull(result);
-            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class));
+            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class));
         }
     }
 
@@ -214,7 +225,7 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
                     .thenReturn(mockResponse);
@@ -222,7 +233,8 @@ class IdMappingServiceTest {
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
             when(multipartFile.getInputStream()).thenReturn(inputStream);
 
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenReturn(Arrays.asList(1))
                     .thenReturn(Arrays.asList(2))
                     .thenReturn(Arrays.asList(3));
@@ -233,7 +245,8 @@ class IdMappingServiceTest {
             // Assert
             assertNotNull(result);
             // Should only call database 3 times (empty lines filtered out)
-            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class));
+            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class));
         }
     }
 
@@ -250,7 +263,9 @@ class IdMappingServiceTest {
 
             // Assert
             assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse), contains("Failed to perform bulk lookup. Exception: File read error")));
+            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse),
+                    contains("Failed to perform bulk lookup. Exception: File read error"),
+                    eq(HttpStatus.INTERNAL_SERVER_ERROR)));
         }
     }
 
@@ -262,14 +277,15 @@ class IdMappingServiceTest {
         String mockQuery = "SELECT id FROM table WHERE name = ?";
 
         try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-             MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
 
             projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
                     .thenReturn(mockResponse);
             propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
             when(multipartFile.getInputStream()).thenReturn(inputStream);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenThrow(new RuntimeException("Database error"));
 
             // Act
@@ -277,7 +293,9 @@ class IdMappingServiceTest {
 
             // Assert
             assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse), contains("Failed to perform bulk lookup. Exception: Database error")));
+            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse),
+                    contains("Failed to perform bulk lookup. Exception: Database error"),
+                    eq(HttpStatus.INTERNAL_SERVER_ERROR)));
         }
     }
 
@@ -292,10 +310,12 @@ class IdMappingServiceTest {
             when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
 
             // Capture the PreparedStatementSetter to verify its behavior
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
+            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class)))
                     .thenAnswer(invocation -> {
                         PreparedStatementSetter pss = invocation.getArgument(1);
-                        // We can't easily test the PreparedStatementSetter without a real PreparedStatement
+                        // We can't easily test the PreparedStatementSetter without a real
+                        // PreparedStatement
                         // but we can verify it's called
                         return Arrays.asList(123);
                     });
@@ -305,7 +325,8 @@ class IdMappingServiceTest {
 
             // Assert
             assertNotNull(result);
-            verify(jdbcTemplate).query(eq(mockQuery), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class));
+            verify(jdbcTemplate).query(eq(mockQuery), any(PreparedStatementSetter.class),
+                    any(SingleColumnRowMapper.class));
         }
     }
 }
