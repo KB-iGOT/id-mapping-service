@@ -128,4 +128,13 @@ public class IdMappingControllerTest {
         // Verify
         verify(idMappingService).bulkGetOrInsert(mockFile);
     }
+
+    @Test
+    public void testLookup_EmptyValue_ReturnsBadRequest() {
+        // Do not mock service call because it should not be reached
+        ResponseEntity<ApiResponse> result = idMappingController.lookup("");
+
+        assertEquals(HttpStatus.BAD_REQUEST, result.getBody().getResponseCode(), "Response code should be BAD_REQUEST");
+        assertTrue(result.getBody().getParams().getErrMsg().contains("Invalid or empty name"));
+    }
 }
