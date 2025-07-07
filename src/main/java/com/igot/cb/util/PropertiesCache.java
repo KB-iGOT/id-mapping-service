@@ -10,8 +10,6 @@ public class PropertiesCache {
 
     private final Properties configProp = new Properties();
 
-    private static PropertiesCache INSTANCE = null;
-
     private PropertiesCache() {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("application.properties")) {
             if (inputStream != null) {
@@ -22,15 +20,12 @@ public class PropertiesCache {
         }
     }
 
+    private static class ObjectBuilder {
+        private static final PropertiesCache INSTANCE = new PropertiesCache();
+    }
+
     public static PropertiesCache getInstance() {
-        if (null == INSTANCE) {
-			synchronized (PropertiesCache.class) {
-				if (null == INSTANCE) {
-					INSTANCE = new PropertiesCache();
-				}
-			}
-		}
-        return INSTANCE;
+        return ObjectBuilder.INSTANCE;
     }
 
     public String getProperty(String key) {
