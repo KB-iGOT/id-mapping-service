@@ -93,9 +93,6 @@
 						<include>com/igot/cb/*</include>
 						<include>com/igot/cb/**/*</include>
 					</includes>
-					<excludes>
-						<exclude>com/igot/cb/IdMappingApplication</exclude>
-					</excludes>
 					<rules>
 						<rule>
 							<element>BUNDLE</element>
