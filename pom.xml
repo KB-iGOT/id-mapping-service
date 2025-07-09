@@ -94,7 +94,7 @@
 						<include>com/igot/cb/**/*</include>
 					</includes>
 					<excludes>
-						<exclude>com/igot/cb/util/Constants*</exclude>
+						<exclude>com/igot/cb/IdMappingApplication</exclude>
 					</excludes>
 					<rules>
 						<rule>
@@ -103,12 +103,12 @@
 								<limit>
 									<counter>INSTRUCTION</counter>
 									<value>COVEREDRATIO</value>
-									<minimum>0.01</minimum>
+									<minimum>0.30</minimum>
 								</limit>
 								<limit>
 									<counter>BRANCH</counter>
 									<value>COVEREDRATIO</value>
-									<minimum>0.01</minimum>
+									<minimum>0.20</minimum>
 								</limit>
 							</limits>
 						</rule>
