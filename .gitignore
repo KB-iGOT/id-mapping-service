@@ -82,3 +82,17 @@ target/site/jacoco/com.igot.cb.util/PropertiesCache$ObjectBuilder.html
 target/surefire-reports/com.igot.cb.util.PropertiesCacheTest.txt
 target/surefire-reports/TEST-com.igot.cb.util.PropertiesCacheTest.xml
 target/test-classes/com/igot/cb/util/PropertiesCacheTest.class
+target/classes/com/igot/cb/dao/BitPositionDao.class
+target/classes/com/igot/cb/util/GlobalExceptionHandler.class
+target/site/jacoco/com.igot.cb.dao/BitPositionDao.html
+target/site/jacoco/com.igot.cb.dao/BitPositionDao.java.html
+target/site/jacoco/com.igot.cb.dao/index.html
+target/site/jacoco/com.igot.cb.dao/index.source.html
+target/site/jacoco/com.igot.cb.util/GlobalExceptionHandler.html
+target/site/jacoco/com.igot.cb.util/GlobalExceptionHandler.java.html
+target/surefire-reports/com.igot.cb.dao.BitPositionDaoTest.txt
+target/surefire-reports/com.igot.cb.util.GlobalExceptionHandlerTest.txt
+target/surefire-reports/TEST-com.igot.cb.dao.BitPositionDaoTest.xml
+target/surefire-reports/TEST-com.igot.cb.util.GlobalExceptionHandlerTest.xml
+target/test-classes/com/igot/cb/dao/BitPositionDaoTest.class
+target/test-classes/com/igot/cb/util/GlobalExceptionHandlerTest.class

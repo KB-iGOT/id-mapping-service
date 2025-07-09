@@ -67,7 +67,7 @@ class IdMappingServiceTest {
     }
 
     @Test
-    void bulkGetOrInsert_FromFile_Success() throws Exception {
+    void bulkGetOrInsert_FromFile_Success() {
         String csv = "X\nY\n";
         MockMultipartFile file = new MockMultipartFile(
                 "file", "list.csv", "text/plain", csv.getBytes(StandardCharsets.UTF_8));
@@ -96,7 +96,7 @@ class IdMappingServiceTest {
     }
 
     @Test
-    void bulkGetOrInsert_EmptyFile_ReturnsEmptyList() throws Exception {
+    void bulkGetOrInsert_EmptyFile_ReturnsEmptyList() {
         MockMultipartFile empty = new MockMultipartFile(
                 "file", "empty.csv", "text/plain", new byte[0]);
         List<Map<String, Long>> result = service.bulkGetOrInsert(empty);
@@ -105,7 +105,7 @@ class IdMappingServiceTest {
     }
 
     @Test
-    void bulkGetOrInsert_OnlyBlankLines_ReturnsEmptyList() throws Exception {
+    void bulkGetOrInsert_OnlyBlankLines_ReturnsEmptyList() {
         // file of blank/whitespace-only lines
         String content = "   \n\t\n   \n";
         MockMultipartFile blanks = new MockMultipartFile(

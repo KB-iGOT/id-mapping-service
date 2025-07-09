@@ -9,18 +9,16 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 
 import com.igot.cb.service.IdMappingService;
 
-public class IdMappingControllerTest {
+class IdMappingControllerTest {
     @Mock
     private IdMappingService idMappingService;
 
@@ -49,7 +47,7 @@ public class IdMappingControllerTest {
     }
 
     @Test
-    void bulkLookup_WithFile_ReturnsOkAndListOfMappings() throws Exception {
+    void bulkLookup_WithFile_ReturnsOkAndListOfMappings() {
         // Arrange
         String content = "A\nB\n";
         MockMultipartFile file = new MockMultipartFile(

@@ -25,9 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class IdMappingService {
+    private final BitPositionDao bitPositionDao;
 
-    @Autowired
-    BitPositionDao bitPositionDao;
+    public IdMappingService(BitPositionDao bitPositionDao) {
+        this.bitPositionDao = bitPositionDao;
+    }
 
     /**
      * Cache to store name-to-ID mappings to reduce database lookups.
@@ -61,7 +63,7 @@ public class IdMappingService {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             List<String> names = reader.lines().map(String::trim).filter(s -> !s.isEmpty())
-                    .collect(Collectors.toList());
+                    .toList();
             return bulkGetOrInsert(names);
         } catch (Exception e) {
             log.error("Failed to perform bulk lookup. Exception: ", e);
@@ -81,7 +83,7 @@ public class IdMappingService {
                 .map(String::trim)
                 .filter(StringUtils::hasText)
                 .map(name -> Map.of(name, cache.computeIfAbsent(name.toLowerCase(), this::fetchOrInsertFromDb)))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

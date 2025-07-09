@@ -13,17 +13,23 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    static final String TIMESTAMP = "timestamp";
+    static final String STATUS = "status";
+    static final String ERROR = "error";
+    static final String MESSAGE = "message";
+    static final String PATH = "path";
+
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> handleDataAccessException(
             DataAccessException ex,
             HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 Map.of(
-                        "timestamp", LocalDateTime.now().toString(),
-                        "status", 500,
-                        "error", "Database Error",
-                        "message", ex.getMostSpecificCause().getMessage(),
-                        "path", request.getRequestURI()));
+                        TIMESTAMP, LocalDateTime.now().toString(),
+                        STATUS, 500,
+                        ERROR, "Database Error",
+                        MESSAGE, ex.getMostSpecificCause().getMessage(),
+                        PATH, request.getRequestURI()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -32,11 +38,11 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 Map.of(
-                        "timestamp", LocalDateTime.now().toString(),
-                        "status", 400,
-                        "error", "Invalid Input",
-                        "message", ex.getMessage(),
-                        "path", request.getRequestURI()));
+                        TIMESTAMP, LocalDateTime.now().toString(),
+                        STATUS, 400,
+                        ERROR, "Invalid Input",
+                        MESSAGE, ex.getMessage(),
+                        PATH, request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -45,11 +51,11 @@ public class GlobalExceptionHandler {
             HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 Map.of(
-                        "timestamp", LocalDateTime.now().toString(),
-                        "status", 500,
-                        "error", "Internal Server Error",
-                        "message", ex.getMessage(),
-                        "path", request.getRequestURI()));
+                        TIMESTAMP, LocalDateTime.now().toString(),
+                        STATUS, 500,
+                        ERROR, "Internal Server Error",
+                        MESSAGE, ex.getMessage(),
+                        PATH, request.getRequestURI()));
     }
 
 }

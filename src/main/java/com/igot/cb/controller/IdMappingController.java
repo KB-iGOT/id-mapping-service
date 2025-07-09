@@ -3,7 +3,6 @@ package com.igot.cb.controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,9 +16,11 @@ import io.micrometer.core.annotation.Timed;
 
 @RestController
 public class IdMappingController {
+    private final IdMappingService idMappingService;
 
-    @Autowired
-    private IdMappingService idMappingService;
+    public IdMappingController(IdMappingService idMappingService) {
+        this.idMappingService = idMappingService;
+    }
 
     @Timed(value = "idmapping.lookup.timer")
     @GetMapping("/idmapping/lookup")

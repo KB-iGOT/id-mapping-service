@@ -16,7 +16,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-public class BitPositionDaoTest {
+class BitPositionDaoTest {
     @Mock
     private JdbcTemplate jdbcTemplate;
 
