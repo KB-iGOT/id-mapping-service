@@ -1,6 +1,8 @@
 package com.igot.cb.controller;
 
-import io.micrometer.core.annotation.Timed;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.igot.cb.service.IdMappingService;
-import com.igot.cb.util.ApiResponse;
+
+import io.micrometer.core.annotation.Timed;
 
 @RestController
 public class IdMappingController {
@@ -20,15 +23,13 @@ public class IdMappingController {
 
     @Timed(value = "idmapping.lookup.timer")
     @GetMapping("/idmapping/lookup")
-    public ResponseEntity<ApiResponse> lookup(@RequestParam String name) {
-        ApiResponse response = idMappingService.getOrInsertId(name);
-        return new ResponseEntity<>(response, response.getResponseCode());
+    public ResponseEntity<Map<String, Long>> lookup(@RequestParam String name) {
+        return ResponseEntity.ok(idMappingService.getOrInsertId(name));
     }
 
     @Timed(value = "idmapping.bulk.lookup.timer")
     @PostMapping("/idmapping/bulk/lookup")
-    public ResponseEntity<ApiResponse> bulkLookup(@RequestParam("file") MultipartFile file) {
-        ApiResponse response = idMappingService.bulkGetOrInsert(file);
-        return new ResponseEntity<>(response, response.getResponseCode());
+    public ResponseEntity<List<Map<String, Long>>> bulkLookup(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(idMappingService.bulkGetOrInsert(file));
     }
 }

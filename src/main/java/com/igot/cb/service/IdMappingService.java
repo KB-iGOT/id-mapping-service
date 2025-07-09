@@ -3,94 +3,95 @@ package com.igot.cb.service;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.igot.cb.util.ApiResponse;
-import com.igot.cb.util.Constants;
-import com.igot.cb.util.ProjectUtil;
-import com.igot.cb.util.PropertiesCache;
+import com.igot.cb.dao.BitPositionDao;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service for managing ID mappings, including looking up and inserting IDs
+ * based on names.
+ * It uses a cache to avoid redundant database lookups.
+ */
 @Service
 @Slf4j
 public class IdMappingService {
 
     @Autowired
-    JdbcTemplate jdbcTemplate;
+    BitPositionDao bitPositionDao;
 
-    private final Map<String, Integer> cache = new ConcurrentHashMap<>();
+    /**
+     * Cache to store name-to-ID mappings to reduce database lookups.
+     * Uses a ConcurrentHashMap for thread-safe operations.
+     */
+    private final Map<String, Long> cache = new ConcurrentHashMap<>();
 
-    public ApiResponse getOrInsertId(String name) {
-        ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP);
-
+    /**
+     * Retrieves the ID for a given name, inserting it into the database if it does
+     * not exist.
+     *
+     * @param name The name to look up or insert.
+     * @return BitPositionResponse containing the name and its corresponding ID.
+     */
+    public Map<String, Long> getOrInsertId(String name) {
         if (StringUtils.hasText(name)) {
-            name = name.trim();
+            return Map.of(name, cache.computeIfAbsent(name.toLowerCase(), this::fetchOrInsertFromDb));
         } else {
-            ProjectUtil.setErrorDetails(response, "Name cannot be empty.", HttpStatus.BAD_REQUEST);
-            return response;
+            throw new IllegalArgumentException("Name must not be null or empty");
         }
-        int result = cache.computeIfAbsent(name, this::fetchOrInsertFromDb);
-        if (result < 0) {
-            ProjectUtil.setErrorDetails(response, "Failed to perform lookup.", HttpStatus.INTERNAL_SERVER_ERROR);
-        } else {
-            response.getResult().put(name, result);
-        }
-        return response;
     }
 
-    @PostMapping
-    public ApiResponse bulkGetOrInsert(MultipartFile file) {
-        ApiResponse response = ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP);
+    /**
+     * Bulk get or insert method that accepts a file containing names.
+     *
+     * @param file MultipartFile containing names, one per line.
+     * @return List of BitPositionResponse containing the name and its corresponding
+     *         ID.
+     */
+    public List<Map<String, Long>> bulkGetOrInsert(MultipartFile file) {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             List<String> names = reader.lines().map(String::trim).filter(s -> !s.isEmpty())
                     .collect(Collectors.toList());
-            Map<String, Integer> result = new LinkedHashMap<>();
-            for (String name : names) {
-                result.put(name, fetchOrInsertFromDb(name));
-            }
+            return bulkGetOrInsert(names);
         } catch (Exception e) {
             log.error("Failed to perform bulk lookup. Exception: ", e);
-            ProjectUtil.setErrorDetails(response, "Failed to perform bulk lookup. Exception: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new IllegalStateException("Failed to process given file.");
         }
-        return response;
     }
 
-    private int fetchOrInsertFromDb(String name) {
-        String sql = PropertiesCache.getInstance().getProperty(Constants.IP_MAP_LOOKUP_QUERY);
-        try {
-            List<Integer> results = jdbcTemplate.query(
-                    sql,
-                    new PreparedStatementSetter() {
-                        @Override
-                        public void setValues(PreparedStatement ps) throws SQLException {
-                            ps.setString(1, name);
-                            ps.setString(2, name);
-                        }
-                    },
-                    new SingleColumnRowMapper<>(Integer.class));
+    /**
+     * Bulk get or insert method that accepts a list of names.
+     *
+     * @param names List of names to look up or insert.
+     * @return List of BitPositionResponse containing the name and its corresponding
+     *         ID.
+     */
+    public List<Map<String, Long>> bulkGetOrInsert(List<String> names) {
+        return names.stream()
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .map(name -> Map.of(name, cache.computeIfAbsent(name.toLowerCase(), this::fetchOrInsertFromDb)))
+                .collect(Collectors.toList());
+    }
 
-            return results.isEmpty() ? -1 : results.get(0);
-        } catch (Exception e) {
-            log.error("Database error for name: {}", name, e);
-            throw e;
-        }
+    /**
+     * Fetches the ID from the database or inserts a new record if it does not
+     * exist.
+     *
+     * @param name The name to look up or insert.
+     * @return The ID associated with the name.
+     */
+    private Long fetchOrInsertFromDb(String name) {
+        return bitPositionDao.getOrInsert(name);
     }
 }
