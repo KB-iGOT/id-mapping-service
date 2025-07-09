@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-public class GlobalExceptionHandlerTest {
+class GlobalExceptionHandlerTest {
     private GlobalExceptionHandler handler;
     private HttpServletRequest req;
 
