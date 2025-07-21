@@ -65,4 +65,24 @@ class IdMappingControllerTest {
         assertEquals(expected, resp.getBody());
         verify(idMappingService).bulkGetOrInsert(file);
     }
+
+    @Test
+    void bulkLookup_WithParamList_ReturnsOkAndListOfMappings() {
+        // Arrange
+        String paramList = "A,B,C";
+        String paramSeparator = ",";
+        List<Map<String, Long>> expected = List.of(
+                Map.of("A", 1L),
+                Map.of("B", 2L),
+                Map.of("C", 3L));
+        when(idMappingService.bulkGetOrInsert(paramList, paramSeparator)).thenReturn(expected);
+
+        // Act
+        ResponseEntity<List<Map<String, Long>>> resp = controller.bulkLookup(paramList, paramSeparator);
+
+        // Assert
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals(expected, resp.getBody());
+        verify(idMappingService).bulkGetOrInsert(paramList, paramSeparator);
+    }
 }

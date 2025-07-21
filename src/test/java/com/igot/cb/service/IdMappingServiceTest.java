@@ -118,4 +118,34 @@ class IdMappingServiceTest {
         assertTrue(result.isEmpty(), "Whitespace-only lines should be filtered out");
         verifyNoInteractions(bitPositionDao);
     }
+
+    @Test
+    void blulkGetOrInsert_ParamList_Success() {
+        String paramList = "A,B,C";
+        String separator = ",";
+
+        when(bitPositionDao.getOrInsert("a")).thenReturn(1L);
+        when(bitPositionDao.getOrInsert("b")).thenReturn(2L);
+        when(bitPositionDao.getOrInsert("c")).thenReturn(3L);
+
+        List<Map<String, Long>> result = service.bulkGetOrInsert(paramList, separator);
+
+        assertEquals(3, result.size());
+        assertEquals(1L, result.get(0).get("A"));
+        assertEquals(2L, result.get(1).get("B"));
+        assertEquals(3L, result.get(2).get("C"));
+    }
+
+    @Test
+    void bulkGetOrInsert_EmptyParamList_Throws() {
+        String emptyList = "";
+        String separator = ",";
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.bulkGetOrInsert(emptyList, separator),
+                "Should throw if paramList is empty");
+
+        assertEquals("Parameter list must not be null or empty", ex.getMessage());
+    }
 }

@@ -72,6 +72,23 @@ public class IdMappingService {
     }
 
     /**
+     * Bulk get or insert method that accepts a comma-separated list of names.
+     *
+     * @param paramList      Comma-separated list of names to look up or insert.
+     * @param paramSeparator The separator used in the list (e.g., ",").
+     * @return List of BitPositionResponse containing the name and its corresponding
+     *         ID.
+     */
+    public List<Map<String, Long>> bulkGetOrInsert(String paramList, String paramSeparator) {
+        if (StringUtils.hasText(paramList)) {
+            List<String> names = List.of(paramList.split(paramSeparator));
+            return bulkGetOrInsert(names);
+        } else {
+            throw new IllegalArgumentException("Parameter list must not be null or empty");
+        }
+    }
+
+    /**
      * Bulk get or insert method that accepts a list of names.
      *
      * @param names List of names to look up or insert.

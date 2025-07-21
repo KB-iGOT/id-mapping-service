@@ -23,14 +23,20 @@ public class IdMappingController {
     }
 
     @Timed(value = "idmapping.lookup.timer")
-    @GetMapping("/idmapping/lookup")
+    @GetMapping("/idmapping/v1/lookup")
     public ResponseEntity<Map<String, Long>> lookup(@RequestParam String name) {
         return ResponseEntity.ok(idMappingService.getOrInsertId(name));
     }
 
     @Timed(value = "idmapping.bulk.lookup.timer")
-    @PostMapping("/idmapping/bulk/lookup")
+    @PostMapping("/idmapping/v1/bulk/lookup")
     public ResponseEntity<List<Map<String, Long>>> bulkLookup(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(idMappingService.bulkGetOrInsert(file));
+    }
+
+    @Timed(value = "idmapping.bulk.lookup.timer")
+    @GetMapping("/idmapping/v1/list/lookup")
+    public ResponseEntity<List<Map<String, Long>>> bulkLookup(@RequestParam String paramList, @RequestParam String paramSeparator) {
+        return ResponseEntity.ok(idMappingService.bulkGetOrInsert(paramList, paramSeparator));
     }
 }
