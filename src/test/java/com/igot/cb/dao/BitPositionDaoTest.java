@@ -30,16 +30,16 @@ class BitPositionDaoTest {
 
     @Test
     void getOrInsert_Success() {
-        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), eq("X"), eq("X")))
-            .thenReturn(42L);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("X"), eq("X")))
+            .thenReturn(42);
 
-        Long id = dao.getOrInsert("X");
-        assertEquals(42L, id);
+        Integer id = dao.getOrInsert("X");
+        assertEquals(42, id);
     }
 
     @Test
     void getOrInsert_ThrowsDataAccessException() {
-        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(), any()))
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(), any()))
             .thenThrow(new DataAccessResourceFailureException("fail"));
 
         assertThrows(DataAccessException.class, () -> dao.getOrInsert("X"));

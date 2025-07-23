@@ -35,7 +35,7 @@ public class IdMappingService {
      * Cache to store name-to-ID mappings to reduce database lookups.
      * Uses a ConcurrentHashMap for thread-safe operations.
      */
-    private final Map<String, Long> cache = new ConcurrentHashMap<>();
+    private final Map<String, Integer> cache = new ConcurrentHashMap<>();
 
     /**
      * Retrieves the ID for a given name, inserting it into the database if it does
@@ -44,7 +44,7 @@ public class IdMappingService {
      * @param name The name to look up or insert.
      * @return BitPositionResponse containing the name and its corresponding ID.
      */
-    public Map<String, Long> getOrInsertId(String name) {
+    public Map<String, Integer> getOrInsertId(String name) {
         if (StringUtils.hasText(name)) {
             return Map.of(name, cache.computeIfAbsent(name.toLowerCase(), this::fetchOrInsertFromDb));
         } else {
@@ -59,7 +59,7 @@ public class IdMappingService {
      * @return List of BitPositionResponse containing the name and its corresponding
      *         ID.
      */
-    public List<Map<String, Long>> bulkGetOrInsert(MultipartFile file) {
+    public List<Map<String, Integer>> bulkGetOrInsert(MultipartFile file) {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             List<String> names = reader.lines().map(String::trim).filter(s -> !s.isEmpty())
@@ -79,7 +79,7 @@ public class IdMappingService {
      * @return List of BitPositionResponse containing the name and its corresponding
      *         ID.
      */
-    public List<Map<String, Long>> bulkGetOrInsert(String paramList, String paramSeparator) {
+    public List<Map<String, Integer>> bulkGetOrInsert(String paramList, String paramSeparator) {
         if (StringUtils.hasText(paramList)) {
             List<String> names = List.of(paramList.split(paramSeparator));
             return bulkGetOrInsert(names);
@@ -95,7 +95,7 @@ public class IdMappingService {
      * @return List of BitPositionResponse containing the name and its corresponding
      *         ID.
      */
-    public List<Map<String, Long>> bulkGetOrInsert(List<String> names) {
+    public List<Map<String, Integer>> bulkGetOrInsert(List<String> names) {
         return names.stream()
                 .map(String::trim)
                 .filter(StringUtils::hasText)
@@ -110,7 +110,7 @@ public class IdMappingService {
      * @param name The name to look up or insert.
      * @return The ID associated with the name.
      */
-    private Long fetchOrInsertFromDb(String name) {
+    private Integer fetchOrInsertFromDb(String name) {
         return bitPositionDao.getOrInsert(name);
     }
 }

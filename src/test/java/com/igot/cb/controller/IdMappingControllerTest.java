@@ -34,11 +34,11 @@ class IdMappingControllerTest {
     void lookup_WithValidName_ReturnsOkAndMapping() {
         // Arrange
         String input = "GroupA";
-        Map<String, Long> map = Map.of(input, 123L);
+        Map<String, Integer> map = Map.of(input, 123);
         when(idMappingService.getOrInsertId(input)).thenReturn(map);
 
         // Act
-        ResponseEntity<Map<String, Long>> resp = controller.lookup(input);
+        ResponseEntity<Map<String, Integer>> resp = controller.lookup(input);
 
         // Assert
         assertEquals(HttpStatus.OK, resp.getStatusCode());
@@ -52,13 +52,13 @@ class IdMappingControllerTest {
         String content = "A\nB\n";
         MockMultipartFile file = new MockMultipartFile(
                 "file", "names.txt", "text/plain", content.getBytes());
-        List<Map<String, Long>> expected = List.of(
-                Map.of("A", 1L),
-                Map.of("B", 2L));
+        List<Map<String, Integer>> expected = List.of(
+                Map.of("A", 1),
+                Map.of("B", 2));
         when(idMappingService.bulkGetOrInsert(file)).thenReturn(expected);
 
         // Act
-        ResponseEntity<List<Map<String, Long>>> resp = controller.bulkLookup(file);
+        ResponseEntity<List<Map<String, Integer>>> resp = controller.bulkLookup(file);
 
         // Assert
         assertEquals(HttpStatus.OK, resp.getStatusCode());
@@ -71,14 +71,14 @@ class IdMappingControllerTest {
         // Arrange
         String paramList = "A,B,C";
         String paramSeparator = ",";
-        List<Map<String, Long>> expected = List.of(
-                Map.of("A", 1L),
-                Map.of("B", 2L),
-                Map.of("C", 3L));
+        List<Map<String, Integer>> expected = List.of(
+                Map.of("A", 1),
+                Map.of("B", 2),
+                Map.of("C", 3));
         when(idMappingService.bulkGetOrInsert(paramList, paramSeparator)).thenReturn(expected);
 
         // Act
-        ResponseEntity<List<Map<String, Long>>> resp = controller.bulkLookup(paramList, paramSeparator);
+        ResponseEntity<List<Map<String, Integer>>> resp = controller.bulkLookup(paramList, paramSeparator);
 
         // Assert
         assertEquals(HttpStatus.OK, resp.getStatusCode());

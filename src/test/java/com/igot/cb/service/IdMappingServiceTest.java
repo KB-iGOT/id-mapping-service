@@ -38,11 +38,11 @@ class IdMappingServiceTest {
 
     @Test
     void getOrInsertId_ValidName_ReturnsMap() {
-        when(bitPositionDao.getOrInsert("foo")).thenReturn(7L);
-        Map<String, Long> result = service.getOrInsertId("foo");
+        when(bitPositionDao.getOrInsert("foo")).thenReturn(7);
+        Map<String, Integer> result = service.getOrInsertId("foo");
 
         assertEquals(1, result.size());
-        assertEquals(7L, result.get("foo"));
+        assertEquals(7, result.get("foo"));
     }
 
     @Test
@@ -55,15 +55,15 @@ class IdMappingServiceTest {
     void bulkGetOrInsert_FromList_TrimsAndFilters() {
         // prepare three names, one blank, one padded
         List<String> names = Arrays.asList("A", " B ", "", "C");
-        when(bitPositionDao.getOrInsert("a")).thenReturn(1L);
-        when(bitPositionDao.getOrInsert("b")).thenReturn(2L);
-        when(bitPositionDao.getOrInsert("c")).thenReturn(3L);
+        when(bitPositionDao.getOrInsert("a")).thenReturn(1);
+        when(bitPositionDao.getOrInsert("b")).thenReturn(2);
+        when(bitPositionDao.getOrInsert("c")).thenReturn(3);
 
-        List<Map<String, Long>> results = service.bulkGetOrInsert(names);
+        List<Map<String, Integer>> results = service.bulkGetOrInsert(names);
         assertEquals(3, results.size());
-        assertEquals(1L, results.get(0).get("A"));
-        assertEquals(2L, results.get(1).get("B"));
-        assertEquals(3L, results.get(2).get("C"));
+        assertEquals(1, results.get(0).get("A"));
+        assertEquals(2, results.get(1).get("B"));
+        assertEquals(3, results.get(2).get("C"));
     }
 
     @Test
@@ -71,13 +71,13 @@ class IdMappingServiceTest {
         String csv = "X\nY\n";
         MockMultipartFile file = new MockMultipartFile(
                 "file", "list.csv", "text/plain", csv.getBytes(StandardCharsets.UTF_8));
-        when(bitPositionDao.getOrInsert("x")).thenReturn(10L);
-        when(bitPositionDao.getOrInsert("y")).thenReturn(20L);
+        when(bitPositionDao.getOrInsert("x")).thenReturn(10);
+        when(bitPositionDao.getOrInsert("y")).thenReturn(20);
 
-        List<Map<String, Long>> out = service.bulkGetOrInsert(file);
+        List<Map<String, Integer>> out = service.bulkGetOrInsert(file);
         assertEquals(2, out.size());
-        assertEquals(10L, out.get(0).get("X"));
-        assertEquals(20L, out.get(1).get("Y"));
+        assertEquals(10, out.get(0).get("X"));
+        assertEquals(20, out.get(1).get("Y"));
     }
 
     @Test
@@ -99,7 +99,7 @@ class IdMappingServiceTest {
     void bulkGetOrInsert_EmptyFile_ReturnsEmptyList() {
         MockMultipartFile empty = new MockMultipartFile(
                 "file", "empty.csv", "text/plain", new byte[0]);
-        List<Map<String, Long>> result = service.bulkGetOrInsert(empty);
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(empty);
         assertNotNull(result);
         assertTrue(result.isEmpty(), "Empty file → empty result list");
     }
@@ -112,7 +112,7 @@ class IdMappingServiceTest {
                 "file", "blanks.csv", "text/plain",
                 content.getBytes(StandardCharsets.UTF_8));
 
-        List<Map<String, Long>> result = service.bulkGetOrInsert(blanks);
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(blanks);
 
         assertNotNull(result);
         assertTrue(result.isEmpty(), "Whitespace-only lines should be filtered out");
@@ -124,16 +124,16 @@ class IdMappingServiceTest {
         String paramList = "A,B,C";
         String separator = ",";
 
-        when(bitPositionDao.getOrInsert("a")).thenReturn(1L);
-        when(bitPositionDao.getOrInsert("b")).thenReturn(2L);
-        when(bitPositionDao.getOrInsert("c")).thenReturn(3L);
+        when(bitPositionDao.getOrInsert("a")).thenReturn(1);
+        when(bitPositionDao.getOrInsert("b")).thenReturn(2);
+        when(bitPositionDao.getOrInsert("c")).thenReturn(3);
 
-        List<Map<String, Long>> result = service.bulkGetOrInsert(paramList, separator);
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(paramList, separator);
 
         assertEquals(3, result.size());
-        assertEquals(1L, result.get(0).get("A"));
-        assertEquals(2L, result.get(1).get("B"));
-        assertEquals(3L, result.get(2).get("C"));
+        assertEquals(1, result.get(0).get("A"));
+        assertEquals(2, result.get(1).get("B"));
+        assertEquals(3, result.get(2).get("C"));
     }
 
     @Test

@@ -23,10 +23,10 @@ public class BitPositionDao {
                 SELECT id FROM master_bitposition_lookup WHERE name = ?
             """;
 
-    public Long getOrInsert(String name) {
+    public Integer getOrInsert(String name) {
         return jdbcTemplate.queryForObject(
                 SQL,
-                Long.class,
+                Integer.class,
                 name, name);
     }
 }
