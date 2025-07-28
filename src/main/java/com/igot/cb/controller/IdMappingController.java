@@ -1,7 +1,8 @@
 package com.igot.cb.controller;
 
-import io.micrometer.core.annotation.Timed;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,25 +11,32 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.igot.cb.service.IdMappingService;
-import com.igot.cb.util.ApiResponse;
+
+import io.micrometer.core.annotation.Timed;
 
 @RestController
 public class IdMappingController {
+    private final IdMappingService idMappingService;
 
-    @Autowired
-    private IdMappingService idMappingService;
+    public IdMappingController(IdMappingService idMappingService) {
+        this.idMappingService = idMappingService;
+    }
 
     @Timed(value = "idmapping.lookup.timer")
-    @GetMapping("/idmapping/lookup")
-    public ResponseEntity<ApiResponse> lookup(@RequestParam String name) {
-        ApiResponse response = idMappingService.getOrInsertId(name);
-        return new ResponseEntity<>(response, response.getResponseCode());
+    @GetMapping("/idmapping/v1/lookup")
+    public ResponseEntity<Map<String, Integer>> lookup(@RequestParam String name) {
+        return ResponseEntity.ok(idMappingService.getOrInsertId(name));
     }
 
     @Timed(value = "idmapping.bulk.lookup.timer")
-    @PostMapping("/idmapping/bulk/lookup")
-    public ResponseEntity<ApiResponse> bulkLookup(@RequestParam("file") MultipartFile file) {
-        ApiResponse response = idMappingService.bulkGetOrInsert(file);
-        return new ResponseEntity<>(response, response.getResponseCode());
+    @PostMapping("/idmapping/v1/bulk/lookup")
+    public ResponseEntity<List<Map<String, Integer>>> bulkLookup(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(idMappingService.bulkGetOrInsert(file));
+    }
+
+    @Timed(value = "idmapping.bulk.lookup.timer")
+    @GetMapping("/idmapping/v1/list/lookup")
+    public ResponseEntity<List<Map<String, Integer>>> bulkLookup(@RequestParam String paramList, @RequestParam String paramSeparator) {
+        return ResponseEntity.ok(idMappingService.bulkGetOrInsert(paramList, paramSeparator));
     }
 }

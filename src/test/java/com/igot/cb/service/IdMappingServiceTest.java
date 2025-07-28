@@ -3,330 +3,149 @@ package com.igot.cb.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.SingleColumnRowMapper;
+import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.igot.cb.util.ApiResponse;
-import com.igot.cb.util.Constants;
-import com.igot.cb.util.ProjectUtil;
-import com.igot.cb.util.PropertiesCache;
+import com.igot.cb.dao.BitPositionDao;
 
-@ExtendWith(MockitoExtension.class)
 class IdMappingServiceTest {
-
     @Mock
-    private JdbcTemplate jdbcTemplate;
-
-    @Mock
-    private PropertiesCache propertiesCache;
-
-    @Mock
-    private MultipartFile multipartFile;
+    private BitPositionDao bitPositionDao;
 
     @InjectMocks
-    private IdMappingService idMappingService;
-
-    private ApiResponse mockResponse;
-    private Map<String, Object> mockResult;
+    private IdMappingService service;
 
     @BeforeEach
-    void setUp() throws Exception {
-        // Clear the cache before each test
-        Field cacheField = IdMappingService.class.getDeclaredField("cache");
-        cacheField.setAccessible(true);
-        ConcurrentHashMap<String, Integer> cache = (ConcurrentHashMap<String, Integer>) cacheField
-                .get(idMappingService);
-        cache.clear();
-
-        // Setup mock response
-        mockResult = new HashMap<>();
-        mockResponse = new ApiResponse();
-        mockResponse.setResult(mockResult);
+    void setup() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testGetOrInsertId_Success_NewEntry() {
-        // Arrange
-        String testName = "testName";
-        int expectedId = 123;
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
+    void getOrInsertId_ValidName_ReturnsMap() {
+        when(bitPositionDao.getOrInsert("foo")).thenReturn(7);
+        Map<String, Integer> result = service.getOrInsertId("foo");
 
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenReturn(Arrays.asList(expectedId));
-
-            // Act
-            ApiResponse result = idMappingService.getOrInsertId(testName);
-
-            // Assert
-            assertNotNull(result);
-            assertEquals(expectedId, result.getResult().get(testName));
-            verify(jdbcTemplate, times(1)).query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
-        }
+        assertEquals(1, result.size());
+        assertEquals(7, result.get("foo"));
     }
 
     @Test
-    void testGetOrInsertId_Success_FromCache() {
-        // Arrange
-        String testName = "cachedName";
-        int expectedId = 456;
-
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY))
-                    .thenReturn("SELECT id FROM table WHERE name = ?");
-            when(jdbcTemplate.query(anyString(), any(PreparedStatementSetter.class), any(SingleColumnRowMapper.class)))
-                    .thenReturn(Arrays.asList(expectedId));
-
-            // First call to populate cache
-            idMappingService.getOrInsertId(testName);
-
-            // Act - Second call should use cache
-            ApiResponse result = idMappingService.getOrInsertId(testName);
-
-            // Assert
-            assertNotNull(result);
-            assertEquals(expectedId, result.getResult().get(testName));
-            // Verify database is called only once (first time)
-            verify(jdbcTemplate, times(1)).query(anyString(), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
-        }
+    void getOrInsertId_EmptyName_Throws() {
+        assertThrows(IllegalArgumentException.class, () -> service.getOrInsertId(""),
+                "Name must not be null or empty");
     }
 
     @Test
-    void testGetOrInsertId_DatabaseError() {
-        // Arrange
-        String testName = "errorName";
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
+    void bulkGetOrInsert_FromList_TrimsAndFilters() {
+        // prepare three names, one blank, one padded
+        List<String> names = Arrays.asList("A", " B ", "", "C");
+        when(bitPositionDao.getOrInsert("a")).thenReturn(1);
+        when(bitPositionDao.getOrInsert("b")).thenReturn(2);
+        when(bitPositionDao.getOrInsert("c")).thenReturn(3);
 
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenThrow(new RuntimeException("Database connection failed"));
-
-            // Act & Assert
-            assertThrows(RuntimeException.class, () -> idMappingService.getOrInsertId(testName));
-        }
+        List<Map<String, Integer>> results = service.bulkGetOrInsert(names);
+        assertEquals(3, results.size());
+        assertEquals(1, results.get(0).get("A"));
+        assertEquals(2, results.get(1).get("B"));
+        assertEquals(3, results.get(2).get("C"));
     }
 
     @Test
-    void testGetOrInsertId_EmptyResult() {
-        // Arrange
-        String testName = "nonExistentName";
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
+    void bulkGetOrInsert_FromFile_Success() {
+        String csv = "X\nY\n";
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "list.csv", "text/plain", csv.getBytes(StandardCharsets.UTF_8));
+        when(bitPositionDao.getOrInsert("x")).thenReturn(10);
+        when(bitPositionDao.getOrInsert("y")).thenReturn(20);
 
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenReturn(Arrays.asList()); // Empty list
-
-            // Act
-            ApiResponse result = idMappingService.getOrInsertId(testName);
-
-            // Assert
-            assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(mockResponse, "Failed to perform lookup.",
-                    HttpStatus.INTERNAL_SERVER_ERROR));
-        }
+        List<Map<String, Integer>> out = service.bulkGetOrInsert(file);
+        assertEquals(2, out.size());
+        assertEquals(10, out.get(0).get("X"));
+        assertEquals(20, out.get(1).get("Y"));
     }
 
     @Test
-    void testBulkGetOrInsert_Success() throws IOException {
-        // Arrange
-        String fileContent = "name1\nname2\nname3\n";
-        InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
+    void bulkGetOrInsert_FileReadError_Throws() throws Exception {
+        MultipartFile badFile = mock(MultipartFile.class);
+        // simulate exception on getInputStream
+        when(badFile.getInputStream()).thenThrow(new IOException("stream failed"));
 
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(multipartFile.getInputStream()).thenReturn(inputStream);
-
-            // Mock database responses for each name
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenReturn(Arrays.asList(1))
-                    .thenReturn(Arrays.asList(2))
-                    .thenReturn(Arrays.asList(3));
-
-            // Act
-            ApiResponse result = idMappingService.bulkGetOrInsert(multipartFile);
-
-            // Assert
-            assertNotNull(result);
-            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
-        }
+        // Act & Assert
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> service.bulkGetOrInsert(badFile),
+                "Should wrap any IO error in IllegalStateException");
+        assertTrue(ex.getMessage().contains("Failed to process given file"),
+                "Exception text should come from your service catch block");
     }
 
     @Test
-    void testBulkGetOrInsert_WithEmptyLines() throws IOException {
-        // Arrange
-        String fileContent = "name1\n\nname2\n   \nname3\n";
-        InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
-
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(multipartFile.getInputStream()).thenReturn(inputStream);
-
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenReturn(Arrays.asList(1))
-                    .thenReturn(Arrays.asList(2))
-                    .thenReturn(Arrays.asList(3));
-
-            // Act
-            ApiResponse result = idMappingService.bulkGetOrInsert(multipartFile);
-
-            // Assert
-            assertNotNull(result);
-            // Should only call database 3 times (empty lines filtered out)
-            verify(jdbcTemplate, times(3)).query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
-        }
+    void bulkGetOrInsert_EmptyFile_ReturnsEmptyList() {
+        MockMultipartFile empty = new MockMultipartFile(
+                "file", "empty.csv", "text/plain", new byte[0]);
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(empty);
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "Empty file → empty result list");
     }
 
     @Test
-    void testBulkGetOrInsert_IOException() throws IOException {
-        // Arrange
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class)) {
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
-                    .thenReturn(mockResponse);
-            when(multipartFile.getInputStream()).thenThrow(new IOException("File read error"));
+    void bulkGetOrInsert_OnlyBlankLines_ReturnsEmptyList() {
+        // file of blank/whitespace-only lines
+        String content = "   \n\t\n   \n";
+        MockMultipartFile blanks = new MockMultipartFile(
+                "file", "blanks.csv", "text/plain",
+                content.getBytes(StandardCharsets.UTF_8));
 
-            // Act
-            ApiResponse result = idMappingService.bulkGetOrInsert(multipartFile);
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(blanks);
 
-            // Assert
-            assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse),
-                    contains("Failed to perform bulk lookup. Exception: File read error"),
-                    eq(HttpStatus.INTERNAL_SERVER_ERROR)));
-        }
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "Whitespace-only lines should be filtered out");
+        verifyNoInteractions(bitPositionDao);
     }
 
     @Test
-    void testBulkGetOrInsert_DatabaseError() throws IOException {
-        // Arrange
-        String fileContent = "name1\n";
-        InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes(StandardCharsets.UTF_8));
-        String mockQuery = "SELECT id FROM table WHERE name = ?";
+    void blulkGetOrInsert_ParamList_Success() {
+        String paramList = "A,B,C";
+        String separator = ",";
 
-        try (MockedStatic<ProjectUtil> projectUtilMock = mockStatic(ProjectUtil.class);
-                MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
+        when(bitPositionDao.getOrInsert("a")).thenReturn(1);
+        when(bitPositionDao.getOrInsert("b")).thenReturn(2);
+        when(bitPositionDao.getOrInsert("c")).thenReturn(3);
 
-            projectUtilMock.when(() -> ProjectUtil.createDefaultResponse(Constants.API_IDMAP_BULK_LOOKUP))
-                    .thenReturn(mockResponse);
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
-            when(multipartFile.getInputStream()).thenReturn(inputStream);
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenThrow(new RuntimeException("Database error"));
+        List<Map<String, Integer>> result = service.bulkGetOrInsert(paramList, separator);
 
-            // Act
-            ApiResponse result = idMappingService.bulkGetOrInsert(multipartFile);
-
-            // Assert
-            assertNotNull(result);
-            projectUtilMock.verify(() -> ProjectUtil.setErrorDetails(eq(mockResponse),
-                    contains("Failed to perform bulk lookup. Exception: Database error"),
-                    eq(HttpStatus.INTERNAL_SERVER_ERROR)));
-        }
+        assertEquals(3, result.size());
+        assertEquals(1, result.get(0).get("A"));
+        assertEquals(2, result.get(1).get("B"));
+        assertEquals(3, result.get(2).get("C"));
     }
 
     @Test
-    void testFetchOrInsertFromDb_PreparedStatementSetter() throws SQLException {
-        // Arrange
-        String testName = "testName";
-        String mockQuery = "SELECT id FROM table WHERE name = ? OR name = ?";
+    void bulkGetOrInsert_EmptyParamList_Throws() {
+        String emptyList = "";
+        String separator = ",";
 
-        try (MockedStatic<PropertiesCache> propertiesCacheMock = mockStatic(PropertiesCache.class)) {
-            propertiesCacheMock.when(PropertiesCache::getInstance).thenReturn(propertiesCache);
-            when(propertiesCache.getProperty(Constants.IP_MAP_LOOKUP_QUERY)).thenReturn(mockQuery);
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.bulkGetOrInsert(emptyList, separator),
+                "Should throw if paramList is empty");
 
-            // Capture the PreparedStatementSetter to verify its behavior
-            when(jdbcTemplate.query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class)))
-                    .thenAnswer(invocation -> {
-                        PreparedStatementSetter pss = invocation.getArgument(1);
-                        // We can't easily test the PreparedStatementSetter without a real
-                        // PreparedStatement
-                        // but we can verify it's called
-                        return Arrays.asList(123);
-                    });
-
-            // Act
-            ApiResponse result = idMappingService.getOrInsertId(testName);
-
-            // Assert
-            assertNotNull(result);
-            verify(jdbcTemplate).query(eq(mockQuery), any(PreparedStatementSetter.class),
-                    any(SingleColumnRowMapper.class));
-        }
+        assertEquals("Parameter list must not be null or empty", ex.getMessage());
     }
 }
