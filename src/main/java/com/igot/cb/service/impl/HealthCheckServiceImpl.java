@@ -33,20 +33,17 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         // Check PostgreSQL
         Map<String, Object> dbHealthCheck = checkDatabaseHealth();
 
-        // ✅ Remove exception before adding to checks — prevents leaking into response
         Exception dbException = (Exception) dbHealthCheck.remove(Constants.EXCEPTION);
-        checks.add(dbHealthCheck);  // ← clean map, no exception field
+        checks.add(dbHealthCheck);
 
         boolean dbHealthy = (Boolean) dbHealthCheck.get(Constants.HEALTHY);
 
-        // ✅ Service level check — pass extracted exception
         checks.add(ProjectUtil.createDefaultMapResponse(
                 "id-mapping-service",
                 dbHealthy,
-                dbHealthy ? null : dbException  // ← use extracted exception
+                dbHealthy ? null : dbException
         ));
 
-        // ✅ Always SUCCESS — health API itself is running
         response.getParams().setStatus(Constants.SUCCESS);
         response.getParams().setErr(null);
         response.getParams().setErrmsg(null);
@@ -66,19 +63,13 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         try {
             jdbcTemplate.queryForObject("SELECT 1", Integer.class);
             logger.debug("Database health check: SUCCESS");
-            result.put(Constants.EXCEPTION, null);              // ← null on success
-            result.putAll(ProjectUtil.createDefaultMapResponse(
-                    "PostgreSQL",
-                    true,
-                    null                                        // ← no exception
+            result.put(Constants.EXCEPTION, null);
+            result.putAll(ProjectUtil.createDefaultMapResponse("PostgreSQL", true, null
             ));
         } catch (Exception e) {
             logger.error("Database health check: FAILED - {}", e.getMessage());
-            result.put(Constants.EXCEPTION, e);                 // ← store exception
-            result.putAll(ProjectUtil.createDefaultMapResponse(
-                    "PostgreSQL",
-                    false,
-                    e                                           // ← pass exception
+            result.put(Constants.EXCEPTION, e);
+            result.putAll(ProjectUtil.createDefaultMapResponse("PostgreSQL", false, e
             ));
         }
         return result;
