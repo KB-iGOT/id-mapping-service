@@ -50,10 +50,10 @@ public class HealthCheckServiceImpl implements HealthCheckService {
         response.setResponseCode(HttpStatus.OK);
 
         Map<String, Object> responseObj = new HashMap<>();
-        responseObj.put(Constants.HEALTHY, true);                    // ← always true
+        responseObj.put(Constants.HEALTHY, true);
         responseObj.put(Constants.CHECKS, checks);
-        responseObj.put(Constants.NAME, Constants.HEALTH_CHECK_NAME); // ← fixed constant
-        response.put(Constants.RESPONSE, responseObj);               // ← use constant
+        responseObj.put(Constants.NAME, Constants.HEALTH_CHECK_NAME);
+        response.put(Constants.RESPONSE, responseObj);
 
         return response;
     }
