@@ -140,3 +140,4 @@ Expose metrics to Prometheus using:
 ```
 /actuator/prometheus
 ```
+
